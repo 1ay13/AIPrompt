@@ -12,11 +12,11 @@ const page = () => {
   };
   const passwordHandler = (e) => {
     setPassword(e.target.value)
-    console.log(password)
   };
 
   const formHandler = (e) => {
     e.preventDefault();
+
 
   }
 
