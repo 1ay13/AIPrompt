@@ -25,7 +25,7 @@ const Nav = () => {
 
   const handleSignInClick = () => {
     // Navigate to the sign-in page
-    window.location.href = "/create-account/";
+    window.location.href = "/auth/signin/";
   };
 
   return (

@@ -2,9 +2,8 @@ import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcrypt";
-
-import User from "@models/user"; // Assuming you have a User model
-import { connectToDB } from "@utils/database"; // Assuming this connects to your MongoDB
+import User from "@models/user"; // Ensure this is the correct path to your User model
+import { connectToDB } from "@utils/database"; // Ensure this is the correct path to your database utility
 
 const handler = NextAuth({
   providers: [
@@ -19,65 +18,63 @@ const handler = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        await connectToDB();
-
         try {
-          const user = await User.findOne({ username: credentials.username });
+          await connectToDB(); // Ensure the database is connected
 
-          if (user) {
-            const isValidPassword = await bcrypt.compare(
-              credentials.password,
-              user.password
-            );
+          const { username, password } = credentials;
 
-            if (isValidPassword) {
-              return {
-                id: user._id.toString(),
-                username: user.username,
-                email: user.email,
-                image: user.image,
-              };
-            } else {
-              throw new Error("Invalid username or password");
-            }
-          } else {
+          // Find the user in the database by their username
+          const user = await User.findOne({ username });
+
+          if (!user) {
             throw new Error("No user found with this username");
           }
+
+          // Check if the provided password matches the stored hashed password
+          const isValidPassword = await bcrypt.compare(password, user.password);
+
+          if (!isValidPassword) {
+            throw new Error("Invalid username or password");
+          }
+
+          // If everything is fine, return the user object
+          return {
+            id: user._id.toString(),
+            username: user.username,
+            email: user.email,
+            image: user.image, // Assuming the user document has an image field
+          };
         } catch (error) {
-          console.log("Authorization error:", error);
-          return null; // Return null if something goes wrong
+          console.log("Authorization error:", error.message);
+          return null; // Return null to indicate failed authentication
         }
       },
     }),
   ],
   callbacks: {
-    async session({ session }) {
-      const sessionUser = await User.findOne({ email: session.user.email });
-      session.user.id = sessionUser._id.toString();
+    async session({ session, token }) {
+      // Add the user ID and role to the session object
+      session.user.id = token.sub;
+      session.user.role = token.role;
       return session;
     },
-    async signIn({ user, account, profile, email, credentials }) {
-      try {
-        const userExists = await User.findOne({ email: profile.email });
-
-        if (!userExists) {
-          await User.create({
-            email: profile.email,
-            username: profile.name.replace(" ", "").toLowerCase(),
-            image: profile.picture,
-            password: credentials
-              ? await bcrypt.hash(credentials.password, 10)
-              : null,
-          });
-        }
-
-        return true;
-      } catch (error) {
-        console.log("Sign-in error:", error);
-        return false;
+    async jwt({ token, user }) {
+      // Add the user ID and role to the token object if available
+      if (user) {
+        token.sub = user.id;
+        token.role = user.role;
       }
+      return token;
+    },
+    async signIn({ user, account, profile, email, credentials }) {
+      return true;
     },
   },
+  pages: {
+    signIn: "/auth/signin", // Customize the sign-in page if needed
+    newUser: "/auth/new-user",
+  },
+  debug: true, // Enable debugging to get more detailed logs in case of issues
 });
 
 export { handler as GET, handler as POST };
