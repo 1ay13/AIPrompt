@@ -1,82 +1,83 @@
-'use client'
+'use client';
 
-import React, { useState } from "react";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
-const page = () => {
+const CreateAccount = () => {
+  const router = useRouter();
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);
 
-    const [userName, setUserName] = useState('')
-    const [password, setPassword] = useState('')
-
-  const userNameHandler = (e) => {
-    setUserName(e.target.value)
-  };
-  const passwordHandler = (e) => {
-    setPassword(e.target.value)
-  };
-
-  const formHandler = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    setError(null);
 
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, email, password }),
+      });
 
-  }
+      const data = await res.json();
+
+      if (res.ok) {
+        router.push('/auth/signin');
+      } else {
+        setError(data.message || 'Something went wrong');
+      }
+    } catch (err) {
+      setError('Failed to create account');
+    }
+  };
 
   return (
-    <div className="w-full max-w-xs">
-      <form className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4" onSubmit={formHandler}> 
+    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-md mt-8">
+      <h2 className="text-2xl font-semibold text-center mb-6">Create an Account</h2>
+      <form onSubmit={handleSubmit}>
         <div className="mb-4">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="username"
-          >
-            Username
-          </label>
+          <label htmlFor="username" className="block text-gray-700 font-semibold mb-2">Username</label>
           <input
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="username"
             type="text"
-            placeholder="Username"
-            onChange={userNameHandler}
+            id="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        <div className="mb-6">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="password"
-          >
-            Password
-          </label>
+        <div className="mb-4">
+          <label htmlFor="email" className="block text-gray-700 font-semibold mb-2">Email</label>
           <input
-            className="shadow appearance-none border border-red-500 rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
-            id="password"
-            type="password"
-            placeholder="***************"
-            value={password}
-            onChange={passwordHandler}
+            type="email"
+            id="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <p className="text-red-500 text-xs italic">
-            Please choose a password.
-          </p>
         </div>
-        <div className="flex items-center justify-between">
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-            type="button"
-          >
-            Sign In
-          </button>
-          <a
-            className="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800"
-            href="#"
-          >
-            Forgot Password?
-          </a>
+        <div className="mb-4">
+          <label htmlFor="password" className="block text-gray-700 font-semibold mb-2">Password</label>
+          <input
+            type="password"
+            id="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
+        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+        <button type="submit" className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition duration-300">Create Account</button>
       </form>
-      <p className="text-center text-gray-500 text-xs">
-        &copy;2020 Acme Corp. All rights reserved.
-      </p>
     </div>
   );
 };
 
-export default page;
+export default CreateAccount;

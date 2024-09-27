@@ -7,16 +7,26 @@ import { signIn, signOut, useSession, getProviders } from "next-auth/react";
 
 const Nav = () => {
   const { data: session } = useSession();
-
   const [providers, setProviders] = useState(null);
   const [toggleDropdown, setToggleDropdown] = useState(false);
 
   useEffect(() => {
-    (async () => {
+    const fetchProviders = async () => {
       const res = await getProviders();
       setProviders(res);
-    })();
+    };
+    fetchProviders();
   }, []);
+
+  const handleSignOut = () => {
+    setToggleDropdown(false);
+    signOut();
+  };
+
+  const handleSignInClick = () => {
+    // Navigate to the sign-in page
+    window.location.href = "/auth/signin/";
+  };
 
   return (
     <nav className="flex-between w-full mb-16 pt-3">
@@ -32,14 +42,18 @@ const Nav = () => {
       </Link>
 
       {/* Desktop Navigation */}
-      <div className="sm:flex hidden">
+      <div className="sm:flex hidden gap-3">
         {session?.user ? (
           <div className="flex gap-3 md:gap-5">
             <Link href="/create-prompt" className="black_btn">
               Create Post
             </Link>
 
-            <button type="button" onClick={signOut} className="outline_btn">
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="outline_btn"
+            >
               Sign Out
             </button>
 
@@ -54,26 +68,20 @@ const Nav = () => {
             </Link>
           </div>
         ) : (
-          <>
-            {providers &&
-              Object.values(providers).map((provider) => (
-                <button
-                  type="button"
-                  key={provider.name}
-                  onClick={() => {
-                    signIn(provider.id);
-                  }}
-                  className="black_btn"
-                >
-                  Sign in
-                </button>
-              ))}
-          </>
+          providers && (
+            <button
+              type="button"
+              onClick={handleSignInClick} // Navigate to SignInForm page
+              className="black_btn"
+            >
+              SignIn/ Signup
+            </button>
+          )
         )}
       </div>
 
       {/* Mobile Navigation */}
-      <div className="sm:hidden flex relative">
+      <div className="md:hidden flex relative">
         {session?.user ? (
           <div className="flex">
             <Image
@@ -103,10 +111,7 @@ const Nav = () => {
                 </Link>
                 <button
                   type="button"
-                  onClick={() => {
-                    setToggleDropdown(false);
-                    signOut();
-                  }}
+                  onClick={handleSignOut}
                   className="mt-5 w-full black_btn"
                 >
                   Sign Out
@@ -115,26 +120,19 @@ const Nav = () => {
             )}
           </div>
         ) : (
-          <>
-            {providers &&
-              Object.values(providers).map((provider) => (
-                <button
-                  type="button"
-                  key={provider.name}
-                  onClick={() => {
-                    signIn(provider.id);
-                  }}
-                  className="black_btn"
-                >
-                  Sign in via Google
-                </button>
-              ))}
-          </>
+          providers &&
+          Object.values(providers).map((provider) => (
+            <button
+              type="button"
+              key={provider.name}
+              onClick={() => signIn(provider.id)}
+              className="black_btn"
+            >
+              Sign in via {provider.name}
+            </button>
+          ))
         )}
       </div>
-      <button type="button" className="black_btn">
-        Create Account
-      </button>
     </nav>
   );
 };
