@@ -4,9 +4,19 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { signIn, signOut, useSession, getProviders } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 const Nav = () => {
   const { data: session } = useSession();
+  const router = useRouter();
+
+  const handleCreateAccount = () => {
+    router.push("/create-account");
+  };
+
+  const handleSignIn = () => {
+    router.push("/signin");
+  };
 
   const [providers, setProviders] = useState(null);
   const [toggleDropdown, setToggleDropdown] = useState(false);
@@ -22,13 +32,13 @@ const Nav = () => {
     <nav className="flex-between w-full mb-16 pt-3">
       <Link href="/" className="flex gap-2 flex-center">
         <Image
-          src="/assets/images/logo.svg"
+          src="/assets/images/reallogo.png"
           alt="logo"
-          width={30}
-          height={30}
+          width={60}
+          height={60}
           className="object-contain"
         />
-        <p className="logo_text">Promptopia</p>
+        <p className="logo_text">Prompts</p>
       </Link>
 
       {/* Desktop Navigation */}
@@ -45,7 +55,11 @@ const Nav = () => {
 
             <Link href="/profile">
               <Image
-                src={session?.user.image}
+                src={
+                  session?.user?.image
+                    ? session.user.image
+                    : "/assets/images/reallogo.png"
+                }              
                 width={37}
                 height={37}
                 className="rounded-full"
@@ -55,19 +69,23 @@ const Nav = () => {
           </div>
         ) : (
           <>
-            {providers &&
-              Object.values(providers).map((provider) => (
-                <button
-                  type="button"
-                  key={provider.name}
-                  onClick={() => {
-                    signIn(provider.id);
-                  }}
-                  className="black_btn"
-                >
-                  Sign in
-                </button>
-              ))}
+            {/* Add key to each button */}
+            <button
+              type="button"
+              className="black_btn mr-3"
+              onClick={handleSignIn}
+              key="signin-btn"
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              className="black_btn"
+              onClick={handleCreateAccount}
+              key="create-account-btn"
+            >
+              Create Account
+            </button>
           </>
         )}
       </div>
@@ -77,7 +95,11 @@ const Nav = () => {
         {session?.user ? (
           <div className="flex">
             <Image
-              src={session?.user.image}
+              src={
+                session?.user?.image
+                  ? session.user.image
+                  : "/assets/images/logo.png"
+              } // Fallback to logo image
               width={37}
               height={37}
               className="rounded-full"
@@ -118,23 +140,26 @@ const Nav = () => {
           <>
             {providers &&
               Object.values(providers).map((provider) => (
-                <button
-                  type="button"
-                  key={provider.name}
-                  onClick={() => {
-                    signIn(provider.id);
-                  }}
-                  className="black_btn"
-                >
-                  Sign in via Google
-                </button>
+                <div key={provider.name}>
+                  {" "}
+                  {/* Added unique key for each provider */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      signIn(provider.id);
+                    }}
+                    className="black_btn"
+                  >
+                    Sign in via {provider.name}
+                  </button>
+                  <button type="button" className="black_btn">
+                    Create Account
+                  </button>
+                </div>
               ))}
           </>
         )}
       </div>
-      <button type="button" className="black_btn">
-        Create Account
-      </button>
     </nav>
   );
 };
