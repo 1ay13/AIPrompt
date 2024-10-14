@@ -1,17 +1,18 @@
-// app/api/auth/[...nextauth]/route.js
-import NextAuth from 'next-auth';
-import GoogleProvider from 'next-auth/providers/google';
-import CredentialsProvider from 'next-auth/providers/credentials';
+import NextAuth from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
 import { connectToDB } from "@utils/database";
-import NewUser from "@models/newuser"; // Assuming you're using the `NewUser` model
-import bcrypt from 'bcrypt';
+import User from "@models/user"; // Use the unified User model
+import bcrypt from "bcrypt";
 
 export const authOptions = {
   providers: [
+    // Google OAuth Provider
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     }),
+    // Credentials Provider for username/password login
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -19,40 +20,44 @@ export const authOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        // Connect to the database
         await connectToDB();
 
-        // Find the user with the provided username
-        const user = await NewUser.findOne({ username: credentials.username });
+        // Find the user by username
+        const user = await User.findOne({ username: credentials.username }).select('+password');
+        
         if (!user) {
-          throw new Error("No user found with that username");
+          return null; // No user found
         }
 
-        // Verify the password
+        // Compare the password
         const isValidPassword = await bcrypt.compare(credentials.password, user.password);
         if (!isValidPassword) {
-          throw new Error("Invalid password");
+          return null; // Invalid password
         }
 
-        // If the user is found and the password is valid, return the user object
+        // Return user object (without password)
         return { id: user._id, name: user.username, email: user.email };
       },
     }),
   ],
   pages: {
-    signIn: '/signin', // Define the sign-in page
+    signIn: "/signin", // Define the sign-in page
   },
   session: {
-    strategy: 'jwt',
+    strategy: 'jwt',  // Use JWT for session management
   },
   callbacks: {
     async session({ session, token }) {
-      session.user.id = token.sub;
+      session.user.id = token.sub;  // Store user ID in session
+      session.user.name = token.name; // Add name (optional)
+      session.user.email = token.email; // Add email (optional)
       return session;
     },
     async jwt({ token, user }) {
       if (user) {
-        token.sub = user.id;
+        token.sub = user.id;  // Store user ID in JWT token
+        token.name = user.name;  // Store username in token
+        token.email = user.email;  // Store email in token
       }
       return token;
     },
