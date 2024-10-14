@@ -4,6 +4,8 @@ import { connectToDB } from "@utils/database";
 export const POST = async (request) => {
     const { userId, prompt, tag } = await request.json();
 
+    console.log(userId)
+
     try {
         await connectToDB();
         const newPrompt = new Prompt({ creator: userId, prompt, tag });

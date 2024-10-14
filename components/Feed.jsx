@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import PromptCard from "./PromptCard";
 
 const PromptCardList = ({ data, handleTagClick }) => {
@@ -20,8 +20,9 @@ const PromptCardList = ({ data, handleTagClick }) => {
 const Feed = () => {
   const [searchText, setSearchText] = useState("");
   const [allPosts, setAllPosts] = useState([]);
-  const [searchResults, setSearchResults] = useState(null);
+  const [searchResults, setSearchResults] = useState([]);
   const [searchTimeout, setsearchTimeout] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const filterPrompts = (searchtext) => {
     const regex = new RegExp(searchtext, "i");
@@ -37,7 +38,6 @@ const Feed = () => {
     clearTimeout(searchTimeout);
     setSearchText(e.target.value);
 
-    //debounce
     setsearchTimeout(
       setTimeout(() => {
         const searchResult = filterPrompts(e.target.value);
@@ -48,17 +48,24 @@ const Feed = () => {
 
   useEffect(() => {
     const fetchPost = async () => {
-      const response = await fetch("/api/prompt");
-      const data = await response.json();
-      setAllPosts(data);
+      setIsLoading(true);
+      try {
+        const response = await fetch("/api/prompt");
+        const data = await response.json();
+        setAllPosts(data);
+      } catch (error) {
+        console.error("Error fetching posts:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
     fetchPost();
   }, []);
 
   const handleTagClick = (tagName) => {
+    setSearchText(tagName); // Auto-fill the tag name into the search box
     const taggedPost = allPosts.filter((item) => item.tag === tagName);
     setSearchResults(taggedPost);
-    console.log(taggedPost, allPosts);
   };
 
   return (
@@ -74,10 +81,14 @@ const Feed = () => {
         />
       </form>
 
-      <PromptCardList
-        data={searchResults ? searchResults : allPosts}
-        handleTagClick={handleTagClick}
-      />
+      {isLoading ? (
+        <p>Loading...</p>
+      ) : (
+        <PromptCardList
+          data={searchResults.length ? searchResults : allPosts}
+          handleTagClick={handleTagClick}
+        />
+      )}
     </section>
   );
 };

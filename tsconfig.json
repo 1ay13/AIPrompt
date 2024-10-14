@@ -6,7 +6,8 @@
       "@components/*": ["components/*"],
       "@styles/*": ["styles/*"],
       "@models/*": ["models/*"],
-      "@utils/*": ["utils/*"]  
+      "@utils/*": ["utils/*"],
+
     },
     "allowJs": true,
     "skipLibCheck": true,
